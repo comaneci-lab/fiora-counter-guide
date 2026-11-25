@@ -21,7 +21,7 @@ const championSelect = document.querySelector('#form-champion');
 const categorySelect = document.querySelector('#form-category');
 const editorMode = document.querySelector('#editor-mode');
 const categoryField = document.querySelector('#category-field');
-const championField = championSelect.closest('.field');
+const championField = championSelect ? championSelect.closest('.field') : null;
 const categoryFieldset = document.querySelector('#custom-categories');
 const categoryCheckboxes = document.querySelector('#category-checkboxes');
 const form = document.querySelector('#guide-form');
@@ -140,7 +140,7 @@ function renderDetail(champion) {
         <h3 class="detail-name">${escapeHtml(champion.name)}</h3>
         <p class="detail-title">${escapeHtml(champion.title)}</p>
       </div>
-      <button class="edit-matchup" type="button">この対面を編集</button>
+      ${form ? '<button class="edit-matchup" type="button">この対面を編集</button>' : ''}
     </div>
     <div class="guide-content">
       ${renderGuide(guide)}
@@ -165,6 +165,7 @@ function setSelectedChampion(id, focusDetail) {
 }
 
 function renderCategoryOptions() {
+  if (!categorySelect || !categoryCheckboxes) return;
   categorySelect.innerHTML = '<option value="">カテゴリを選択</option>' + categories.map((category) =>
     `<option value="${escapeHtml(category.id)}">${escapeHtml(category.label)}</option>`
   ).join('');
@@ -180,6 +181,7 @@ function renderCategoryOptions() {
 }
 
 function updateEditorMode() {
+  if (!form) return;
   const isMatchup = editorMode.value === 'matchup';
   championField.hidden = !isMatchup;
   categoryField.hidden = isMatchup;
@@ -322,12 +324,14 @@ async function loadChampions() {
     }));
 
     championCount.textContent = `${champions.length} CHAMPIONS · PATCH ${patchVersion}`;
-    championSelect.innerHTML = '<option value="">チャンピオンを選択</option>' + champions.map((champion) =>
-      `<option value="${escapeHtml(champion.id)}">${escapeHtml(champion.name)}</option>`
-    ).join('');
-    championSelect.disabled = false;
-    document.querySelector('#form-patch').placeholder = `例: ${patchVersion}`;
-    document.querySelector('#form-patch').value = patchVersion;
+    if (championSelect) {
+      championSelect.innerHTML = '<option value="">チャンピオンを選択</option>' + champions.map((champion) =>
+        `<option value="${escapeHtml(champion.id)}">${escapeHtml(champion.name)}</option>`
+      ).join('');
+      championSelect.disabled = false;
+      document.querySelector('#form-patch').placeholder = `例: ${patchVersion}`;
+      document.querySelector('#form-patch').value = patchVersion;
+    }
     championList.innerHTML = '';
     renderChampionList();
   } catch (error) {
@@ -335,7 +339,7 @@ async function loadChampions() {
     championList.innerHTML = '<p class="no-results">チャンピオン一覧を読み込めません。</p>';
     loadError.hidden = false;
     loadError.textContent = `Data Dragon: ${error.message}。ネットワーク接続を確認して再読み込みしてください。`;
-    championSelect.innerHTML = '<option value="">読み込みに失敗しました</option>';
+    if (championSelect) championSelect.innerHTML = '<option value="">読み込みに失敗しました</option>';
   }
 }
 
@@ -373,7 +377,7 @@ function reportGuideLoadError(error) {
   loadError.hidden = false;
   const existing = loadError.textContent;
   loadError.textContent = `${existing ? `${existing} ` : ''}ガイドデータ: ${error.message}。ローカルサーバーから開いてください。`;
-  categoryCheckboxes.innerHTML = '<span class="category-loading">カテゴリを読み込めません。</span>';
+  if (categoryCheckboxes) categoryCheckboxes.innerHTML = '<span class="category-loading">カテゴリを読み込めません。</span>';
 }
 
 searchInput.addEventListener('input', renderChampionList);
@@ -387,26 +391,26 @@ championList.addEventListener('keydown', (event) => {
     if (button) setSelectedChampion(button.dataset.championId, false);
   }
 });
-championSelect.addEventListener('change', () => {
-  const id = championSelect.value;
-  setFormValues(matchups[id], 'matchup');
-  setSelectedChampion(id, false);
-});
-categorySelect.addEventListener('change', () => setFormValues(categoryGuides[categorySelect.value], 'category'));
-editorMode.addEventListener('change', () => {
-  const isMatchup = editorMode.value === 'matchup';
-  setFormValues(isMatchup ? matchups[championSelect.value] : categoryGuides[categorySelect.value], editorMode.value);
-});
-detail.addEventListener('click', (event) => {
-  if (event.target.closest('.edit-matchup')) {
-    editMatchup();
-  }
-});
-document.querySelector('#preview-button').addEventListener('click', previewGuide);
-document.querySelector('#download-button').addEventListener('click', downloadGuide);
-document.querySelector('#close-preview').addEventListener('click', () => {
-  editorPreview.hidden = true;
-});
+if (form) {
+  championSelect.addEventListener('change', () => {
+    const id = championSelect.value;
+    setFormValues(matchups[id], 'matchup');
+    setSelectedChampion(id, false);
+  });
+  categorySelect.addEventListener('change', () => setFormValues(categoryGuides[categorySelect.value], 'category'));
+  editorMode.addEventListener('change', () => {
+    const isMatchup = editorMode.value === 'matchup';
+    setFormValues(isMatchup ? matchups[championSelect.value] : categoryGuides[categorySelect.value], editorMode.value);
+  });
+  detail.addEventListener('click', (event) => {
+    if (event.target.closest('.edit-matchup')) editMatchup();
+  });
+  document.querySelector('#preview-button').addEventListener('click', previewGuide);
+  document.querySelector('#download-button').addEventListener('click', downloadGuide);
+  document.querySelector('#close-preview').addEventListener('click', () => {
+    editorPreview.hidden = true;
+  });
+}
 document.addEventListener('keydown', (event) => {
   if (event.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) {
     event.preventDefault();
