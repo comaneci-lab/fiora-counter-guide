@@ -341,9 +341,9 @@ async function loadChampions() {
 
 async function loadGuideData() {
   const [categoriesResponse, matchupsResponse, categoryGuidesResponse] = await Promise.all([
-    fetch('./data/categories.json'),
-    fetch('./data/matchups.json'),
-    fetch('./data/category-guides.json')
+    fetch('./data/categories.json', { cache: 'no-store' }),
+    fetch('./data/matchups.json', { cache: 'no-store' }),
+    fetch('./data/category-guides.json', { cache: 'no-store' })
   ]);
   for (const [name, response] of [
     ['categories.json', categoriesResponse],
