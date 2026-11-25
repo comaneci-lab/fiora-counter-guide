@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#111714">
+    <meta name="description" content="Fiora使いのための、対面別レーン対策ガイド。">
+    <title>Fiora Counter Guide</title>
+    <link rel="preconnect" href="https://ddragon.leagueoflegends.com">
+    <link rel="stylesheet" href="./styles.css">
+    <script src="./app.js" defer></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="Fiora Counter Guide ホーム">
+        <span class="brand-mark" aria-hidden="true">F</span>
+        <span>FIORA <span class="brand-light">COUNTER GUIDE</span></span>
+      </a>
+      <span class="topbar-note">TOP LANE FIELD NOTES</span>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="live-dot"></span> SUMMONER'S RIFT / TOP</p>
+          <h1>対面を知り、<br><span>レーンを制する。</span></h1>
+          <p class="hero-description">Fiora使いのためのチャンピオン別対策ガイド。試合前に、相手に合わせたプランを確認しよう。</p>
+          <p class="disclaimer">ゲーム内データは取得しません。掲載内容はプレイヤーによるガイドです。</p>
+        </div>
+        <div class="hero-art" aria-hidden="true">
+          <div class="art-ring art-ring-outer"></div>
+          <div class="art-ring art-ring-inner"></div>
+          <div class="art-cross"></div>
+          <span class="art-f">F</span>
+          <span class="art-caption">GRAND<br>DUELIST</span>
+        </div>
+      </section>
+
+      <section class="matchup-section" aria-labelledby="matchup-heading">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">01 / MATCHUP DATABASE</p>
+            <h2 id="matchup-heading">対面チャンピオン</h2>
+          </div>
+          <span id="champion-count" class="count-label">読み込み中…</span>
+        </div>
+
+        <div class="matchup-layout">
+          <aside class="champion-picker">
+            <label class="search-box">
+              <span class="sr-only">チャンピオンを検索</span>
+              <span class="search-icon" aria-hidden="true">⌕</span>
+              <input id="champion-search" type="search" placeholder="チャンピオンを検索…" autocomplete="off">
+              <kbd>/</kbd>
+            </label>
+            <div class="picker-toolbar">
+              <span>CHAMPIONS</span>
+              <span id="picker-result-count"></span>
+            </div>
+            <div id="champion-list" class="champion-list" role="listbox" aria-label="対面チャンピオン一覧">
+              <p class="loading-message">チャンピオン情報を取得しています…</p>
+            </div>
+            <p id="load-error" class="load-error" role="status" hidden></p>
+          </aside>
+
+          <div id="matchup-detail" class="matchup-detail" aria-live="polite">
+            <div class="empty-state">
+              <span class="empty-sigil" aria-hidden="true">✳</span>
+              <h3>対面を選んでください</h3>
+              <p>チャンピオンを選ぶと、個別の対策とカテゴリ別のヒントが表示されます。</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="editor-section" aria-labelledby="editor-heading">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">02 / CONTRIBUTOR STUDIO</p>
+            <h2 id="editor-heading">対策をつくる</h2>
+          </div>
+          <span class="editor-badge">ローカル編集 · 公開前にレビュー</span>
+        </div>
+        <div class="editor-intro">
+          <p>対面の情報を入力し、プレビューと検証をしてJSONに書き出せます。書き出したデータはリポジトリに追加してPull Requestで反映してください。</p>
+          <p class="editor-note">入力内容はこのブラウザーから送信されず、自動保存もされません。</p>
+        </div>
+        <form id="guide-form" novalidate>
+          <div class="form-grid">
+            <label class="field">
+              <span>作成する情報 <b>*</b></span>
+              <select id="editor-mode" name="mode">
+                <option value="matchup">チャンピオン別の対策</option>
+                <option value="category">カテゴリ別の汎用対策</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>対面チャンピオン <b>*</b></span>
+              <select id="form-champion" name="championId" required disabled>
+                <option value="">チャンピオン情報を読み込み中…</option>
+              </select>
+            </label>
+            <label class="field" id="category-field" hidden>
+              <span>対象カテゴリ <b>*</b></span>
+              <select id="form-category" name="categoryId" disabled>
+                <option value="">カテゴリを選択</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>更新日 <b>*</b></span>
+              <input id="form-updated" name="updatedAt" type="date" required>
+            </label>
+            <label class="field">
+              <span>更新時のパッチ <b>*</b></span>
+              <input id="form-patch" name="patch" type="text" placeholder="例: 16.1.1" required>
+            </label>
+          </div>
+          <fieldset id="custom-categories" class="category-fieldset">
+            <legend>この対面の独自カテゴリ <span>複数選択可 · Data Dragonのタグとは別に管理</span></legend>
+            <div id="category-checkboxes" class="category-checkboxes">
+              <span class="category-loading">カテゴリを読み込み中…</span>
+            </div>
+          </fieldset>
+
+          <div class="form-grid form-grid-wide">
+            <label class="field">
+              <span>ルーン・シャード</span>
+              <textarea name="runes" rows="3" placeholder="例: メインルーン / サブルーン / 攻撃・フレックス・防御シャード"></textarea>
+            </label>
+            <label class="field">
+              <span>スキルオーダー</span>
+              <input name="skillOrder" type="text" placeholder="例: Q > E > W（レベル1から順に記載）">
+            </label>
+            <label class="field">
+              <span>ビルド</span>
+              <textarea name="build" rows="3" placeholder="コアアイテム、状況別アイテム、ブーツなど"></textarea>
+            </label>
+          </div>
+
+          <div class="form-subheading">
+            <h3>立ち回り</h3>
+            <span>具体的な条件・相手のスキル・狙いを書くと伝わりやすくなります。</span>
+          </div>
+          <div class="form-grid form-grid-wide">
+            <label class="field"><span>マイクロ · レベル1</span><textarea name="micro1" rows="3" placeholder="レベル1の優先事項やトレード条件"></textarea></label>
+            <label class="field"><span>マイクロ · レベル2</span><textarea name="micro2" rows="3" placeholder="レベル2で変わる点、警戒するスキル"></textarea></label>
+            <label class="field"><span>マイクロ · レベル3〜5</span><textarea name="micro3to5" rows="3" placeholder="主要スキルへの対応、仕掛ける条件"></textarea></label>
+            <label class="field"><span>マイクロ · レベル6</span><textarea name="micro6" rows="3" placeholder="レベル6以降のオールインや急襲への対応"></textarea></label>
+            <label class="field"><span>ミクロ · レーン戦終了まで</span><textarea name="lanePlan" rows="3" placeholder="ウェーブ管理、トレード、リコールなど"></textarea></label>
+            <label class="field"><span>マクロ · レーン戦終了後</span><textarea name="macroPlan" rows="3" placeholder="サイドレーン、集団戦、オブジェクトなど"></textarea></label>
+          </div>
+
+          <div class="form-footer">
+            <p id="form-status" class="form-status" role="status"></p>
+            <div class="form-actions">
+              <button id="preview-button" class="button button-secondary" type="button">プレビュー</button>
+              <button id="download-button" class="button button-primary" type="button">JSONを書き出す <span aria-hidden="true">↓</span></button>
+            </div>
+          </div>
+        </form>
+
+        <section id="editor-preview" class="editor-preview" aria-label="対策プレビュー" hidden>
+          <div class="preview-heading">
+            <h3>プレビュー</h3>
+            <button id="close-preview" class="text-button" type="button">閉じる</button>
+          </div>
+          <pre id="preview-json" class="json-preview"></pre>
+        </section>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <a class="brand footer-brand" href="./">
+        <span class="brand-mark" aria-hidden="true">F</span>
+        <span>FIORA <span class="brand-light">COUNTER GUIDE</span></span>
+      </a>
+      <span>FAN-MADE GUIDE · NOT AFFILIATED WITH RIOT GAMES</span>
+    </footer>
+  </body>
+</html>

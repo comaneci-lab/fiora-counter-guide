@@ -1,0 +1,16 @@
+{
+  "categories": [
+    { "id": "assassin", "label": "アサシン" },
+    { "id": "fighter", "label": "ファイター" },
+    { "id": "marksman", "label": "マークスマン" },
+    { "id": "tank", "label": "タンク" },
+    { "id": "mage", "label": "メイジ" },
+    { "id": "support", "label": "サポート" },
+    { "id": "ap-tank", "label": "APタンク" },
+    { "id": "ad-tank", "label": "ADタンク" },
+    { "id": "ap-fighter", "label": "APファイター" },
+    { "id": "ad-fighter", "label": "ADファイター" },
+    { "id": "ap-assassin", "label": "APアサシン" },
+    { "id": "ad-assassin", "label": "ADアサシン" }
+  ]
+}
