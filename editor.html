@@ -48,16 +48,16 @@
         <div class="matchup-layout">
           <aside class="champion-picker">
             <label class="search-box">
-              <span class="sr-only">チャンピオンを検索</span>
+              <span class="sr-only">チャンピオン・汎用対面を検索</span>
               <span class="search-icon" aria-hidden="true">⌕</span>
-              <input id="champion-search" type="search" placeholder="チャンピオンを検索…" autocomplete="off">
+              <input id="champion-search" type="search" placeholder="チャンピオン・汎用対面を検索…" autocomplete="off">
               <kbd>/</kbd>
             </label>
             <div class="picker-toolbar">
-              <span>CHAMPIONS</span>
+              <span>CHAMPIONS · GENERIC</span>
               <span id="picker-result-count"></span>
             </div>
-            <div id="champion-list" class="champion-list" role="listbox" aria-label="対面チャンピオン一覧">
+            <div id="champion-list" class="champion-list" role="listbox" aria-label="対面チャンピオン・汎用対面一覧">
               <p class="loading-message">チャンピオン情報を取得しています…</p>
             </div>
             <p id="load-error" class="load-error" role="status" hidden></p>
@@ -67,7 +67,7 @@
             <div class="empty-state">
               <span class="empty-sigil" aria-hidden="true">✳</span>
               <h3>対面を選んでください</h3>
-              <p>チャンピオンを選ぶと、個別の対策とカテゴリ別のヒントが表示されます。</p>
+              <p>チャンピオンまたは登録済み汎用対面を選ぶと、対策が表示されます。</p>
             </div>
           </div>
         </div>
@@ -91,7 +91,7 @@
               <span>作成する情報 <b>*</b></span>
               <select id="editor-mode" name="mode">
                 <option value="matchup">チャンピオン別の対策</option>
-                <option value="category">カテゴリ別の汎用対策</option>
+                <option value="category">汎用チャンピオンの対策</option>
               </select>
             </label>
             <label class="field">
@@ -100,12 +100,13 @@
                 <option value="">チャンピオン情報を読み込み中…</option>
               </select>
             </label>
-            <label class="field" id="category-field" hidden>
-              <span>対象カテゴリ <b>*</b></span>
-              <select id="form-category" name="categoryId" disabled>
-                <option value="">カテゴリを選択</option>
-              </select>
-            </label>
+            <fieldset id="category-field" class="category-fieldset generic-category-field" hidden>
+              <legend>汎用チャンピオンのカテゴリ <span>複数選択可 · 組み合わせが表示名になります</span></legend>
+              <div id="category-checkboxes" class="category-checkboxes">
+                <span class="category-loading">カテゴリを読み込み中…</span>
+              </div>
+              <p class="generic-name-preview">汎用名：<strong id="generic-name-preview">カテゴリを選択してください</strong></p>
+            </fieldset>
             <label class="field">
               <span>更新日 <b>*</b></span>
               <input id="form-updated" name="updatedAt" type="date" required>
@@ -115,39 +116,111 @@
               <input id="form-patch" name="patch" type="text" placeholder="例: 16.1.1" required>
             </label>
           </div>
-          <fieldset id="custom-categories" class="category-fieldset">
-            <legend>この対面の独自カテゴリ <span>複数選択可 · Data Dragonのタグとは別に管理</span></legend>
-            <div id="category-checkboxes" class="category-checkboxes">
-              <span class="category-loading">カテゴリを読み込み中…</span>
+          <fieldset id="matchup-rating-fields" class="category-fieldset">
+            <legend>有利・不利評価 <span>任意 · チャンピオン別</span></legend>
+            <div class="form-grid form-grid-wide">
+              <label class="field">
+                <span>マッチアップ評価</span>
+                <select id="form-matchup-rating" name="matchupRating">
+                  <option value="">未設定</option>
+                  <option value="有利">有利</option>
+                  <option value="やや有利">やや有利</option>
+                  <option value="五分">五分</option>
+                  <option value="やや不利">やや不利</option>
+                  <option value="不利">不利</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>レーン評価</span>
+                <select id="form-lane-rating" name="laneRating">
+                  <option value="">未設定</option>
+                  <option value="有利">有利</option>
+                  <option value="やや有利">やや有利</option>
+                  <option value="五分">五分</option>
+                  <option value="やや不利">やや不利</option>
+                  <option value="不利">不利</option>
+                </select>
+              </label>
+            </div>
+          </fieldset>
+          <fieldset class="selection-fieldset">
+            <legend>サモナースペル <span>任意 · 選ぶ場合は2つ</span></legend>
+            <div id="summoner-spell-picker" class="summoner-spell-picker">
+              <p class="selection-loading">サモナースペル情報を読み込み中…</p>
             </div>
           </fieldset>
 
-          <div class="form-grid form-grid-wide">
-            <label class="field">
-              <span>ルーン・シャード</span>
-              <textarea name="runes" rows="3" placeholder="例: メインルーン / サブルーン / 攻撃・フレックス・防御シャード"></textarea>
+          <fieldset class="selection-fieldset">
+            <legend>ルーン・シャード <span>メイン4つ · サブ2つ · シャード各段1つ</span></legend>
+            <div class="rune-paths">
+              <section class="selection-group">
+                <h3>メインパス</h3>
+                <div id="primary-style-picker" class="style-picker" role="group" aria-label="メインルーンパス"></div>
+                <div id="primary-rune-slots" class="rune-slot-list"></div>
+              </section>
+              <section class="selection-group">
+                <h3>サブパス <span>3段から異なる2段を選択</span></h3>
+                <div id="secondary-style-picker" class="style-picker" role="group" aria-label="サブルーンパス"></div>
+                <p id="secondary-rune-count" class="selection-count">0 / 2 選択中</p>
+                <div id="secondary-rune-summary" class="secondary-rune-summary" aria-label="選択したサブルーン"></div>
+                <div id="secondary-rune-slots" class="secondary-tier-list"></div>
+              </section>
+            </div>
+            <div id="rune-description" class="rune-description" aria-live="polite">
+              <span>ルーンにカーソルを合わせるか、選択すると説明が表示されます。</span>
+            </div>
+            <div class="shard-group">
+              <h3>シャード</h3>
+              <div id="shard-slots" class="shard-slot-list"></div>
+            </div>
+          </fieldset>
+
+          <fieldset class="selection-fieldset">
+            <legend>スキルオーダー <span>FioraのQWER · レベルごとの習得上限を適用</span></legend>
+            <div id="skill-order-editor" class="skill-order-editor">
+              <p class="selection-loading">スキル情報を読み込み中…</p>
+            </div>
+          </fieldset>
+
+          <fieldset class="selection-fieldset">
+            <legend>ビルド <span>スタートアイテム→序盤アイテム→コアアイテムの順</span></legend>
+            <div id="build-group-picker" class="build-group-picker" role="group" aria-label="ビルドのアイテム分類"></div>
+            <p class="build-editor-note">スタート・序盤アイテムは各6個まで設定できます。コアは必須で、各オプションはコアに追加する候補です（コアと合わせて6個まで、最大3パターン）。</p>
+            <label id="build-option-note-field" class="field build-option-note-field" hidden>
+              <span>このオプションを選ぶ条件・メモ</span>
+              <textarea id="build-option-note" rows="2" maxlength="240" placeholder="例: 相手が上手く回復される場合"></textarea>
             </label>
-            <label class="field">
-              <span>スキルオーダー</span>
-              <input name="skillOrder" type="text" placeholder="例: Q > E > W（レベル1から順に記載）">
-            </label>
-            <label class="field">
-              <span>ビルド</span>
-              <textarea name="build" rows="3" placeholder="コアアイテム、状況別アイテム、ブーツなど"></textarea>
-            </label>
-          </div>
+            <div id="build-selected" class="build-selected" aria-label="選択中のアイテム"></div>
+            <div class="item-search-toolbar">
+              <label class="item-search">
+                <span class="sr-only">アイテム名で絞り込み</span>
+                <input id="item-search" type="search" placeholder="アイテム名で検索…" autocomplete="off">
+              </label>
+              <span id="item-result-count" class="count-label"></span>
+            </div>
+            <div id="item-category-filters" class="item-category-filters" role="group" aria-label="アイテムカテゴリ"></div>
+            <div id="item-gallery" class="item-gallery" aria-live="polite"></div>
+          </fieldset>
 
           <div class="form-subheading">
             <h3>立ち回り</h3>
             <span>具体的な条件・相手のスキル・狙いを書くと伝わりやすくなります。</span>
           </div>
-          <div class="form-grid form-grid-wide">
-            <label class="field"><span>マイクロ · レベル1</span><textarea name="micro1" rows="3" placeholder="レベル1の優先事項やトレード条件"></textarea></label>
-            <label class="field"><span>マイクロ · レベル2</span><textarea name="micro2" rows="3" placeholder="レベル2で変わる点、警戒するスキル"></textarea></label>
-            <label class="field"><span>マイクロ · レベル3〜5</span><textarea name="micro3to5" rows="3" placeholder="主要スキルへの対応、仕掛ける条件"></textarea></label>
-            <label class="field"><span>マイクロ · レベル6</span><textarea name="micro6" rows="3" placeholder="レベル6以降のオールインや急襲への対応"></textarea></label>
-            <label class="field"><span>ミクロ · レーン戦終了まで</span><textarea name="lanePlan" rows="3" placeholder="ウェーブ管理、トレード、リコールなど"></textarea></label>
-            <label class="field"><span>マクロ · レーン戦終了後</span><textarea name="macroPlan" rows="3" placeholder="サイドレーン、集団戦、オブジェクトなど"></textarea></label>
+          <div class="playstyle-editor">
+            <section class="playstyle-editor-group">
+              <h4>マクロ</h4>
+              <label class="field"><span>レーン戦終了後</span><textarea name="macroPlan" rows="3" placeholder="サイドレーン、集団戦、オブジェクトなど"></textarea></label>
+            </section>
+            <section class="playstyle-editor-group">
+              <h4>ミクロ</h4>
+              <label class="field"><span>レーン戦</span><textarea name="lanePlan" rows="3" placeholder="ウェーブ管理、トレード、リコールなど"></textarea></label>
+              <div class="playstyle-levels">
+                <label class="field"><span>Lv1</span><textarea name="micro1" rows="3" placeholder="レベル1の優先事項やトレード条件"></textarea></label>
+                <label class="field"><span>Lv2</span><textarea name="micro2" rows="3" placeholder="レベル2で変わる点、警戒するスキル"></textarea></label>
+                <label class="field"><span>Lv3〜5</span><textarea name="micro3to5" rows="3" placeholder="主要スキルへの対応、仕掛ける条件"></textarea></label>
+                <label class="field"><span>Lv6</span><textarea name="micro6" rows="3" placeholder="レベル6以降のオールインや急襲への対応"></textarea></label>
+              </div>
+            </section>
           </div>
 
           <div class="form-footer">
@@ -155,6 +228,7 @@
             <div class="form-actions">
               <button id="preview-button" class="button button-secondary" type="button">プレビュー</button>
               <button id="download-button" class="button button-primary" type="button">JSONを書き出す <span aria-hidden="true">↓</span></button>
+              <button id="offline-html-button" class="button button-secondary" type="button">画像入りHTMLを書き出す</button>
             </div>
           </div>
         </form>
@@ -164,7 +238,8 @@
             <h3>プレビュー</h3>
             <button id="close-preview" class="text-button" type="button">閉じる</button>
           </div>
-          <pre id="preview-json" class="json-preview"></pre>
+          <div id="preview-content" class="preview-content"></div>
+          <pre id="preview-json" class="json-preview" hidden></pre>
         </section>
       </section>
     </main>
