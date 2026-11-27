@@ -1,0 +1,96 @@
+{
+  "ap-assassin": {
+    "updatedAt": "2026-11-26",
+    "patch": "16.23.1",
+    "source": "manual",
+    "macroPlan": "レーン戦有利で終えられたらマルモティウスで耐えられるはず。\nスプリットプッシュ対面で負けるようなら、ビサージュを積む。",
+    "runes": {
+      "primaryStyleId": 8000,
+      "primaryPerkIds": [
+        8005,
+        9111,
+        9104,
+        8299
+      ],
+      "secondaryStyleId": 8100,
+      "secondaryPerkIds": [
+        8143,
+        8106
+      ],
+      "shardIds": [
+        5008,
+        5008,
+        5001
+      ]
+    },
+    "summonerSpells": [
+      [
+        4,
+        14
+      ],
+      [
+        4,
+        12
+      ]
+    ],
+    "skillOrder": [
+      "Q",
+      "W",
+      "E",
+      "Q",
+      "Q",
+      "R",
+      "Q",
+      "E",
+      "Q",
+      "E",
+      "R",
+      "E",
+      "E",
+      "W",
+      "W",
+      "R",
+      "W",
+      "W"
+    ],
+    "categories": [
+      "ap",
+      "assassin"
+    ],
+    "build": {
+      "start": [
+        "1055",
+        "2003"
+      ],
+      "early": [
+        "1055",
+        "3155",
+        "3077",
+        "2031"
+      ],
+      "core": [
+        "3074",
+        "3078",
+        "3156"
+      ],
+      "options": [
+        {
+          "note": "ミッドもAP",
+          "items": [
+            "3065"
+          ]
+        },
+        {
+          "note": "ADもいる",
+          "items": [
+            "6333"
+          ]
+        },
+        {
+          "note": "",
+          "items": []
+        }
+      ]
+    }
+  }
+}
