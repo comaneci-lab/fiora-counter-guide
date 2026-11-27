@@ -1568,20 +1568,30 @@ function maybeInitializeEditor() {
 }
 
 async function loadGuideData() {
-  const [categoriesResponse, matchupsResponse] = await Promise.all([
-    fetch('./data/categories.json', { cache: 'no-store' }),
-    fetch('./data/matchups.json', { cache: 'no-store' })
-  ]);
-  for (const [name, response] of [
-    ['categories.json', categoriesResponse],
-    ['matchups.json', matchupsResponse]
-  ]) {
-    if (!response.ok) throw new Error(`${name} の読み込みに失敗しました (${response.status})`);
+  let categoryData;
+  let matchupData;
+  try {
+    const [categoriesResponse, matchupsResponse] = await Promise.all([
+      fetch('./data/categories.json', { cache: 'no-store' }),
+      fetch('./data/matchups.json', { cache: 'no-store' })
+    ]);
+    for (const [name, response] of [
+      ['categories.json', categoriesResponse],
+      ['matchups.json', matchupsResponse]
+    ]) {
+      if (!response.ok) throw new Error(`${name} の読み込みに失敗しました (${response.status})`);
+    }
+    [categoryData, matchupData] = await Promise.all([
+      categoriesResponse.json(),
+      matchupsResponse.json()
+    ]);
+  } catch (error) {
+    // file:// で開いた場合はfetchが使えないため、同梱のdata/guide-data.jsを使う
+    const embedded = window.FIORA_GUIDE_DATA;
+    if (!embedded) throw error;
+    categoryData = embedded.categories;
+    matchupData = embedded.matchups;
   }
-  const [categoryData, matchupData] = await Promise.all([
-    categoriesResponse.json(),
-    matchupsResponse.json()
-  ]);
   if (!categoryData || !Array.isArray(categoryData.categories) || !matchupData || Array.isArray(matchupData)) {
     throw new Error('ガイドデータのJSON形式が正しくありません。');
   }

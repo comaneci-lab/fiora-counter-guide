@@ -2,6 +2,16 @@
 
 Fiora向けのトップレーン対面ガイドです。試合中のゲームデータは取得せず、GitHub Pagesで静的に公開することを想定しています。
 
+## サーバーなしで開く（閲覧用）
+
+`index.html` をブラウザで直接開けます。`file://` ではJSONを `fetch` できないため、`data/guide-data.js` に同梱したデータを使います。`data/*.json` を更新したら、次のコマンドで再生成してください（`data/guide-data.js` もコミットします）。
+
+```powershell
+node scripts/build-local-data.js
+```
+
+GitHub Pagesなどのホスティング時は、これまでどおり `data/*.json` を読み込みます。
+
 ## ローカルで確認・編集する
 
 プロジェクトのルートで静的HTTPサーバーを起動します。
