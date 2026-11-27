@@ -1612,20 +1612,116 @@ searchInput.addEventListener('input', renderChampionList);
 championList.addEventListener('click', (event) => {
   const button = event.target.closest('[data-champion-id]');
   if (button) {
+    pauseFollow();
     setSelectedChampion(button.dataset.championId, false);
     return;
   }
   const categoryButton = event.target.closest('[data-category-id]');
-  if (categoryButton) setSelectedCategory(categoryButton.dataset.categoryId);
+  if (categoryButton) {
+    pauseFollow();
+    setSelectedCategory(categoryButton.dataset.categoryId);
+  }
 });
 championList.addEventListener('keydown', (event) => {
   if (event.key === 'Enter' || event.key === ' ') {
     const button = event.target.closest('[data-champion-id]');
     const categoryButton = event.target.closest('[data-category-id]');
-    if (button) setSelectedChampion(button.dataset.championId, false);
-    else if (categoryButton) setSelectedCategory(categoryButton.dataset.categoryId);
+    if (button) {
+      pauseFollow();
+      setSelectedChampion(button.dataset.championId, false);
+    } else if (categoryButton) {
+      pauseFollow();
+      setSelectedCategory(categoryButton.dataset.categoryId);
+    }
   }
 });
+
+const HELPER_URL = 'http://127.0.0.1:8001/state';
+const followBar = document.querySelector('#follow-bar');
+let followPaused = false;
+let followKey = '';
+let followState = null;
+
+function pauseFollow() {
+  if (!followState) return;
+  followPaused = true;
+  renderFollowBar();
+}
+
+function resumeFollow() {
+  followPaused = false;
+  followKey = '';
+  applyFollowState();
+}
+
+function renderFollowBar() {
+  if (!followBar) return;
+  if (!followState) {
+    followBar.hidden = true;
+    return;
+  }
+  followBar.hidden = false;
+  const enemies = followState.enemies || [];
+  let status;
+  if (!followState.connected) status = 'クライアント待機中';
+  else if (!enemies.length) status = '相手のピック待ち';
+  else status = followPaused ? '追従を一時停止中' : '追従中';
+  const tabs = enemies.map((enemy) => {
+    const champion = champions.find((item) => item.id === enemy.id);
+    const name = champion ? champion.name : enemy.id;
+    const image = champion ? `<img src="${escapeHtml(championImage(champion))}" alt="" data-image-label="${escapeHtml(name)}">` : '';
+    const selected = enemy.id === selectedChampionId;
+    return `<button class="follow-tab" type="button" aria-pressed="${selected}" data-follow-id="${escapeHtml(enemy.id)}">${image}<span>${escapeHtml(name)}</span>${enemy.id === followState.suggested ? '<small>TOP?</small>' : ''}</button>`;
+  }).join('');
+  followBar.innerHTML = `
+    <span class="follow-status">LIVE · ${status}</span>
+    <div class="follow-tabs">${tabs}</div>
+    ${followPaused ? '<button class="follow-resume" type="button">追従に戻す</button>' : ''}
+  `;
+}
+
+function applyFollowState() {
+  if (!followState || !champions.length) return;
+  const enemies = followState.enemies || [];
+  const key = `${enemies.map((enemy) => enemy.id).join(',')}|${followState.suggested || ''}`;
+  if (!followPaused && key !== followKey && enemies.length) {
+    followKey = key;
+    const target = followState.suggested || enemies[0].id;
+    if (target !== selectedChampionId) setSelectedChampion(target, false);
+  }
+  renderFollowBar();
+}
+
+async function pollHelper() {
+  let delay = 1000;
+  try {
+    const response = await fetch(HELPER_URL, { cache: 'no-store' });
+    if (!response.ok) throw new Error(String(response.status));
+    followState = await response.json();
+  } catch (error) {
+    followState = null;
+    followKey = '';
+    delay = 3000;
+  }
+  applyFollowState();
+  renderFollowBar();
+  setTimeout(pollHelper, delay);
+}
+
+if (followBar) {
+  followBar.addEventListener('click', (event) => {
+    if (event.target.closest('.follow-resume')) {
+      resumeFollow();
+      return;
+    }
+    const tab = event.target.closest('[data-follow-id]');
+    if (!tab) return;
+    pauseFollow();
+    setSelectedChampion(tab.dataset.followId, false);
+    renderFollowBar();
+  });
+  if (['localhost', '127.0.0.1'].includes(location.hostname)) pollHelper();
+}
 if (form) {
   form.addEventListener('input', () => {
     userHasEditedForm = true;
