@@ -63,6 +63,14 @@ h1 span { color: var(--accent); }
 .section-heading .eyebrow { margin-bottom: 4px; }
 h2 { margin: 0; font-size: 24px; font-weight: 600; letter-spacing: -.025em; }
 .count-label { color: var(--muted); }
+.follow-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-bottom: 10px; padding: 8px 10px; border: 1px solid rgba(201, 238, 135, .32); background: var(--accent-dark); }
+.follow-status { color: var(--accent); font-family: var(--mono); font-size: 10px; letter-spacing: .11em; }
+.follow-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.follow-tab, .follow-resume { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border: 1px solid #3a493e; background: transparent; color: #d3ddd6; font-size: 12px; cursor: pointer; }
+.follow-tab[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+.follow-tab img { width: 22px; height: 22px; object-fit: cover; }
+.follow-tab small { color: var(--accent); font-family: var(--mono); font-size: 9px; }
+.follow-resume { margin-left: auto; border-color: var(--accent); }
 .matchup-layout { display: grid; grid-template-columns: 280px minmax(0, 1fr); min-height: 355px; border: 1px solid var(--line); background: rgba(23, 31, 27, .73); }
 .champion-picker { display: flex; flex-direction: column; min-height: 355px; border-right: 1px solid var(--line); }
 .search-box { display: flex; align-items: center; gap: 9px; margin: 14px 14px 9px; height: 40px; padding: 0 10px; border: 1px solid var(--line); background: #121916; color: var(--muted); }
