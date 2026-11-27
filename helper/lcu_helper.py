@@ -54,7 +54,7 @@ def locked_enemy_champion_ids(session):
 
 
 def suggest_top(enemies, top_hints):
-    """トップらしさのスコアが最大の1体の id を返す。最大が0点または同点なら None。"""
+    """トップらしさのスコアが最大の1体の id を返す。同点なら相手一覧の先頭を選ぶ。"""
     hints = set(top_hints)
     scored = []
     for enemy in enemies:
@@ -65,10 +65,9 @@ def suggest_top(enemies, top_hints):
     if not scored:
         return None
     best = max(score for score, _ in scored)
-    winners = [champion_id for score, champion_id in scored if score == best]
-    if best == 0 or len(winners) != 1:
+    if best == 0:
         return None
-    return winners[0]
+    return next(champion_id for score, champion_id in scored if score == best)
 
 
 def build_state(session, champions_by_key, top_hints):

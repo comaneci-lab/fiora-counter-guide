@@ -40,7 +40,7 @@ python helper/lcu_helper.py
 
 - Python 3 の標準ライブラリのみ使用します。クライアントのlockfileを読み、`http://127.0.0.1:8001/state` を公開します。読み取り専用で、LCUへ書き込みません。
 - インストール先が標準と異なる場合は、環境変数 `LOL_INSTALL_DIR` を設定します（既定: `C:\Riot Games\League of Legends`）。
-- ソロランクでは相手のロールがピック中に分からないため、`data/top-hints.json` とData Dragonのタグから対面トップを推定し、ガイドを自動表示します。相手全員がタブに並ぶので、推定が外れたらタブで切り替えます。
+- ソロランクでは相手のロールがピック中に分からないため、`data/top-hints.json` とData Dragonのタグからトップ適性が最も高い対面を推定し、ガイドを自動表示します。同点なら相手一覧の先頭を選び、対面一覧はロックイン済みの相手に絞り込みます。相手全員がタブに並ぶので、推定が外れたらタブで切り替えます。
 - 対策一覧から手動で選ぶとタブ以外の追従は一時停止し、「追従に戻す」で再開します。
 - 判定ロジックのテスト: `cd helper && python -m unittest`
 
@@ -49,7 +49,7 @@ python helper/lcu_helper.py
 1. `http://localhost:8000/editor.html` を開き、「チャンピオン別の対策」または「汎用チャンピオンの対策」を選び、更新日、更新時のパッチ、必要な項目を入力します。
 2. 汎用チャンピオンでは、独立カテゴリを複数選ぶとその組み合わせが表示名になります（例: `AD` + `アサシン` → `ADアサシン`）。通常チャンピオンには独自カテゴリを付けません。
 3. 「プレビュー」で内容を確認します。更新情報と少なくとも1つの対策項目が必要です。
-4. 「JSONを書き出す」で `matchup-<champion-id-or-category-id>.json` を取得します。
+4. 「JSONを書き出す」で `<champion-id-or-category-id>.json`（例: `Warwick.json`。そのまま `data/matchups/` に置けます） を取得します。
 5. ダウンロードしたJSONを `data/matchups/` に置きます。同じキーのファイルは上書きします。独立カテゴリは `data/categories.json` で管理します。
 6. `node scripts/build-local-data.js` を実行して `data/matchups.json` と `data/guide-data.js` を再生成します。
 7. 変更をコミットしてPull Requestを作成します。静的サイト自体は認証情報を持たず、公開データを直接変更しません。

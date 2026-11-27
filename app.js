@@ -143,9 +143,11 @@ function dataDragonImageError(image) {
 
 function visibleChampions() {
   const query = searchInput.value.trim().toLocaleLowerCase('ja');
+  const enemies = followState && Array.isArray(followState.enemies) ? followState.enemies : [];
+  const enemyIds = enemies.length ? new Set(enemies.map((enemy) => enemy.id)) : null;
   return champions.filter((champion) => {
     const guide = matchups[champion.id];
-    if (!hasCounterGuide(guide)) return false;
+    if (enemyIds ? !enemyIds.has(champion.id) : !hasCounterGuide(guide)) return false;
     return champion.name.toLocaleLowerCase('ja').includes(query)
       || champion.id.toLocaleLowerCase('en').includes(query)
       || champion.title.toLocaleLowerCase('ja').includes(query);
@@ -153,6 +155,7 @@ function visibleChampions() {
 }
 
 function visibleGenericCategories() {
+  if (followState && Array.isArray(followState.enemies) && followState.enemies.length) return [];
   const query = searchInput.value.trim().toLocaleLowerCase('ja');
   return registeredGenericChampions().filter((profile) =>
     profile.name.toLocaleLowerCase('ja').includes(query)
@@ -1396,7 +1399,7 @@ function downloadGuide() {
   if (!showValidation(validateGuide(guide))) return;
   const json = JSON.stringify(guideExport(guide), null, 2);
   downloadTextFile(
-    `matchup-${guide.targetId.toLowerCase()}.json`,
+    `${guide.targetId}.json`,
     `${json}\n`,
     'application/json'
   );
@@ -1651,6 +1654,7 @@ const followBar = document.querySelector('#follow-bar');
 let followPaused = false;
 let followKey = '';
 let followState = null;
+let lastEnemyFilterKey = '';
 
 function pauseFollow() {
   if (!followState) return;
@@ -1691,10 +1695,21 @@ function renderFollowBar() {
 }
 
 function applyFollowState() {
-  if (!followState || !champions.length) return;
-  const enemies = followState.enemies || [];
+  const enemies = followState && Array.isArray(followState.enemies) ? followState.enemies : [];
+  const enemyFilterKey = enemies.map((enemy) => enemy.id).join(',');
+  if (enemyFilterKey !== lastEnemyFilterKey) {
+    lastEnemyFilterKey = enemyFilterKey;
+    renderChampionList();
+  }
+  if (!followState || !champions.length) {
+    followKey = '';
+    renderFollowBar();
+    return;
+  }
   const key = `${enemies.map((enemy) => enemy.id).join(',')}|${followState.suggested || ''}`;
-  if (!followPaused && key !== followKey && enemies.length) {
+  if (!enemies.length) {
+    followKey = '';
+  } else if (!followPaused && key !== followKey) {
     followKey = key;
     const target = followState.suggested || enemies[0].id;
     if (target !== selectedChampionId) setSelectedChampion(target, false);

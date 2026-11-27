@@ -1,0 +1,11 @@
+{
+  "Chogath": {
+    "updatedAt": "2026-11-27",
+    "patch": "16.23.1",
+    "source": "manual",
+    "micro1": "Qをパリィ",
+    "micro2": "Eの時は戦わない",
+    "micro3to5": "Eをどうする？",
+    "micro6": "ALLIN?"
+  }
+}

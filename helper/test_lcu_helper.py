@@ -29,9 +29,9 @@ class SuggestTopTests(unittest.TestCase):
         enemies = [{'id': 'Aatrox', 'tags': ['Fighter']}, {'id': 'Ahri', 'tags': ['Mage']}]
         self.assertEqual(suggest_top(enemies, ['Aatrox']), 'Aatrox')
 
-    def test_tie_or_zero_returns_none(self):
+    def test_tie_uses_first_best_candidate_and_zero_returns_none(self):
         tie = [{'id': 'A', 'tags': ['Fighter']}, {'id': 'B', 'tags': ['Tank']}]
-        self.assertIsNone(suggest_top(tie, []))
+        self.assertEqual(suggest_top(tie, []), 'A')
         self.assertIsNone(suggest_top([{'id': 'Ahri', 'tags': ['Mage']}], []))
 
 
