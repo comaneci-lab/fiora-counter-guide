@@ -7,7 +7,7 @@ Fiora向けのトップレーン対面ガイドです。GitHub Pagesで静的に
 対策データは `data/matchups/` にチャンピオン（または汎用対面）ごとのJSONで管理します。ガイドが読むのは、これらを結合した `data/matchups.json` です。`data/matchups/` を変更したら、次のコマンドで結合ファイルを再生成します。
 
 ```powershell
-node scripts/build-local-data.js
+python helper/fiora_guide.py build-data
 ```
 
 - `data/matchups.json`: ホスティング時にガイドが読み込みます。
@@ -38,11 +38,29 @@ python -m http.server 8000
 python helper/lcu_helper.py
 ```
 
-- Python 3 の標準ライブラリのみ使用します。クライアントのlockfileを読み、`http://127.0.0.1:8001/state` を公開します。読み取り専用で、LCUへ書き込みません。
-- インストール先が標準と異なる場合は、環境変数 `LOL_INSTALL_DIR` を設定します（既定: `C:\Riot Games\League of Legends`）。
+- (開発用の個別ヘルパー) Python 3 の標準ライブラリのみ使用します。クライアントのlockfileを読み、`http://127.0.0.1:8001/state` を公開します。読み取り専用で、LCUへ書き込みません。
+- インストール先は自動検出します。検出できない場合は環境変数 `LOL_INSTALL_DIR` を設定します。
 - ソロランクでは相手のロールがピック中に分からないため、`data/top-hints.json` とData Dragonのタグからトップ適性が最も高い対面を推定し、ガイドを自動表示します。同点なら相手一覧の先頭を選び、対面一覧はロックイン済みの相手に絞り込みます。相手全員がタブに並ぶので、推定が外れたらタブで切り替えます。
 - 対策一覧から手動で選ぶとタブ以外の追従は一時停止し、「追従に戻す」で再開します。
 - 判定ロジックのテスト: `cd helper && python -m unittest`
+
+## 配布用exe(Windows)
+
+`fiora_guide.exe` 1つで、画面の配信・LCU追従・データ統合まで行います。Python/Nodeのインストールは不要です。
+
+```text
+fiora-counter-guide/
+├─ fiora_guide.exe
+└─ data/        ← 外部のデータ(exeには同梱しません)
+```
+
+- `fiora_guide.exe` をダブルクリックすると、ブラウザで `http://127.0.0.1:8000/` が開きます。ポートが使用中なら次の空きポートを使います。
+- `data/` はexeの隣のものを読みます。差し替えるだけで対策データを更新でき、exeの再ビルドは不要です。
+- `data/matchups/` が `matchups.json` より新しいときは、配信前に自動で再生成します。手動で行う場合は `fiora_guide.exe build-data` を実行します。
+- Leagueのインストール先は、Riotのメタデータ・標準パス・各ドライブ・起動中のクライアントから自動検出します。見つからない場合は `fiora_guide.exe --lol-dir "D:\Games\League of Legends"` または環境変数 `LOL_INSTALL_DIR` で指定します。
+- 手元でのビルドは `build-exe.bat` をダブルクリックします(Python 3 が必要)。`release\` に `fiora_guide.exe` と `data\` が作られます。
+- ビルドは `v*` タグのpushで `.github/workflows/release-exe.yml` が行い、exeと `data/` をzipにしてReleaseに添付します。
+- 未署名のexeはWindows SmartScreenやウイルス対策ソフトに警告されることがあります。
 
 ## 対策データを追加する
 
@@ -51,7 +69,7 @@ python helper/lcu_helper.py
 3. 「プレビュー」で内容を確認します。更新情報と少なくとも1つの対策項目が必要です。
 4. 「JSONを書き出す」で `<champion-id-or-category-id>.json`（例: `Warwick.json`。そのまま `data/matchups/` に置けます） を取得します。
 5. ダウンロードしたJSONを `data/matchups/` に置きます。同じキーのファイルは上書きします。独立カテゴリは `data/categories.json` で管理します。
-6. `node scripts/build-local-data.js` を実行して `data/matchups.json` と `data/guide-data.js` を再生成します。
+6. `python helper/fiora_guide.py build-data` を実行して `data/matchups.json` と `data/guide-data.js` を再生成します。
 7. 変更をコミットしてPull Requestを作成します。静的サイト自体は認証情報を持たず、公開データを直接変更しません。
 
 フォーム内容は送信・自動保存されません。ブラウザーを閉じる前にJSONを書き出してください。
@@ -83,6 +101,7 @@ python helper/lcu_helper.py
     "skillOrder": ["Q", "W", "E", "Q", "Q", "R", "Q", "W", "Q", "W", "R", "W", "W", "E", "E", "R", "E", "E"],
     "matchupRating": "五分",
     "laneRating": "やや不利",
+    "progress": 60,
     "build": {
       "start": ["1055", "2003"],
       "early": ["1055", "1001"],
@@ -97,7 +116,7 @@ python helper/lcu_helper.py
 }
 ```
 
-汎用対面もチャンピオン別ガイドと同じ項目を使い、カテゴリ組み合わせIDをキーにして `matchups.json` に保存します。独立カテゴリの組み合わせは `categories` に保存します。カテゴリは `AD`、`AP` とロール別に定義し、`ADアサシン` などの組み合わせ自体はカテゴリとして登録しません。汎用ガイドを登録するまでは一覧に表示されません。未記入の任意項目は省略できます。更新日とパッチバージョンは記録します。通常チャンピオンに独自カテゴリを割り当てる機能はありません。ガイドには任意で `matchupRating` と `laneRating` を設定でき、値は `有利`、`やや有利`、`五分`、`やや不利`、`不利` のいずれかです。評価はガイドのチャンピオン名の横に表示されます。
+汎用対面もチャンピオン別ガイドと同じ項目を使い、カテゴリ組み合わせIDをキーにして `matchups.json` に保存します。独立カテゴリの組み合わせは `categories` に保存します。カテゴリは `AD`、`AP` とロール別に定義し、`ADアサシン` などの組み合わせ自体はカテゴリとして登録しません。汎用ガイドを登録するまでは一覧に表示されません。未記入の任意項目は省略できます。更新日とパッチバージョンは記録します。通常チャンピオンに独自カテゴリを割り当てる機能はありません。ガイドには任意で `matchupRating` と `laneRating` を設定でき、値は `有利`、`やや有利`、`五分`、`やや不利`、`不利` のいずれかです。評価はガイドのチャンピオン名の横に表示されます。チャンピオン別ガイドには任意で対策進捗 `progress`(0〜100の整数)も設定できます。進捗はプログレスサークル(0%は赤、50%は黄、100%は緑)で、進捗、マッチアップ、レーンの順に表示します。チャンピオン一覧にも進捗と有利不利を表示します。
 
 汎用対面の書き出し例です。ダウンロードしたJSONを `data/matchups/` に置いてビルドすると、`matchups.json` に他のチャンピオンと同じ階層で結合されます。既存のチャンピオン項目と同じ順序で、基本情報、テキスト対策、ルーン、サモナースペル、スキルオーダー、評価、カテゴリ、ビルドを出力します。
 

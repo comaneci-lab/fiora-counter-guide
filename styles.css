@@ -71,7 +71,7 @@ h2 { margin: 0; font-size: 24px; font-weight: 600; letter-spacing: -.025em; }
 .follow-tab img { width: 22px; height: 22px; object-fit: cover; }
 .follow-tab small { color: var(--accent); font-family: var(--mono); font-size: 9px; }
 .follow-resume { margin-left: auto; border-color: var(--accent); }
-.matchup-layout { display: grid; grid-template-columns: 280px minmax(0, 1fr); min-height: 355px; border: 1px solid var(--line); background: rgba(23, 31, 27, .73); }
+.matchup-layout { display: grid; grid-template-columns: 330px minmax(0, 1fr); min-height: 355px; border: 1px solid var(--line); background: rgba(23, 31, 27, .73); }
 .champion-picker { display: flex; flex-direction: column; min-height: 355px; border-right: 1px solid var(--line); }
 .search-box { display: flex; align-items: center; gap: 9px; margin: 14px 14px 9px; height: 40px; padding: 0 10px; border: 1px solid var(--line); background: #121916; color: var(--muted); }
 .search-box:focus-within { border-color: #708857; }
@@ -85,6 +85,15 @@ kbd { border: 1px solid #35433a; padding: 0 5px; color: var(--muted); font-famil
 .champion-option:hover, .champion-option:focus-visible { background: #202b25; outline: none; }
 .champion-option[aria-selected="true"] { border-color: rgba(201, 238, 135, .32); background: var(--accent-dark); }
 .champion-option img { width: 29px; height: 29px; border: 1px solid #3a493e; object-fit: cover; }
+.champion-option .option-name { min-width: 0; flex: 1; }
+.option-meta { display: flex; flex: none; width: 104px; align-items: center; gap: 7px; }
+.champion-option .option-ratings { display: flex; flex-direction: column; gap: 1px; overflow: visible; font-size: 9px; line-height: 1.25; white-space: nowrap; }
+.champion-option .option-rating { overflow: visible; font-size: inherit; display: flex; gap: 4px; justify-content: space-between; }
+.option-rating i { color: var(--muted); font-style: normal; }
+.option-rating b { min-width: 3.6em; text-align: right; font-weight: 600; }
+[data-rating="有利"], [data-rating="やや有利"] { color: #8ed081 !important; }
+[data-rating="五分"] { color: #d9d27a !important; }
+[data-rating="やや不利"], [data-rating="不利"] { color: #e0877c !important; }
 .champion-option span { overflow: hidden; color: #d3ddd6; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 .champion-option[aria-selected="true"] span { color: var(--accent); }
 .category-option-mark { width: 29px; height: 29px; flex: 0 0 29px; display: grid; place-items: center; border: 1px solid #536648; color: var(--accent); font-size: 12px !important; }
@@ -104,7 +113,7 @@ kbd { border: 1px solid #35433a; padding: 0 5px; color: var(--muted); font-famil
 .detail-heading-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
 .detail-name { margin: 0; font-size: 25px; line-height: 1.3; }
 .detail-title { margin: 3px 0 0; color: var(--muted); font-size: 11px; }
-.matchup-ratings { display: flex; flex-wrap: wrap; gap: 4px 10px; color: #c1ccc4; font-size: 10px; }
+.matchup-ratings { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; color: #c1ccc4; font-size: 10px; }
 .matchup-ratings > span { white-space: nowrap; }
 .matchup-rating-label { color: var(--muted); }
 .matchup-ratings strong { color: #d1ddd4; font-weight: 500; }
@@ -143,6 +152,7 @@ kbd { border: 1px solid #35433a; padding: 0 5px; color: var(--muted); font-famil
 #guide-form { padding: 20px; border: 1px solid var(--line); background: rgba(23, 31, 27, .73); }
 .form-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
 .form-grid-wide { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 14px; }
+.form-grid-triple { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .field { display: flex; min-width: 0; flex-direction: column; gap: 6px; }
 .field > span { color: #c5d0c8; font-size: 11px; }
 .field b { color: var(--accent); font-weight: 500; }
@@ -362,7 +372,7 @@ kbd { border: 1px solid #35433a; padding: 0 5px; color: var(--muted); font-famil
   .guide-sections { grid-template-columns: 1fr; }
   .guide-skill-row { grid-column: auto; }
   .form-grid { grid-template-columns: 1fr; gap: 10px; }
-  .form-grid-wide { grid-template-columns: 1fr; }
+  .form-grid-wide, .form-grid-triple { grid-template-columns: 1fr; }
   .rune-paths { grid-template-columns: 1fr; }
   .rune-slot-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .shard-slot-list { grid-template-columns: 1fr; }

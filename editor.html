@@ -118,8 +118,12 @@
             </label>
           </div>
           <fieldset id="matchup-rating-fields" class="category-fieldset">
-            <legend>有利・不利評価 <span>任意 · チャンピオン別</span></legend>
-            <div class="form-grid form-grid-wide">
+            <legend>対策進捗・有利不利評価 <span>任意 · チャンピオン別</span></legend>
+            <div class="form-grid form-grid-wide form-grid-triple">
+              <label class="field">
+                <span>対策進捗 (%)</span>
+                <input id="form-progress" name="progress" type="number" min="0" max="100" step="1" inputmode="numeric" placeholder="0〜100">
+              </label>
               <label class="field">
                 <span>マッチアップ評価</span>
                 <select id="form-matchup-rating" name="matchupRating">

@@ -211,6 +211,7 @@ function hasCounterGuide(guide) {
   return FIELDS.some(([key]) => typeof guide[key] === 'string' && guide[key].trim())
     || MATCHUP_RATING_OPTIONS.includes(guide.matchupRating)
     || MATCHUP_RATING_OPTIONS.includes(guide.laneRating)
+    || normalizeProgress(guide.progress) !== null
     || hasAnyRuneSelection(guide.runes)
     || (Array.isArray(guide.skillOrder) && guide.skillOrder.length > 0)
     || (Array.isArray(guide.summonerSpells) && guide.summonerSpells.length > 0)
@@ -231,7 +232,8 @@ function renderChampionList() {
       aria-selected="${champion.id === selectedChampionId}"
       data-champion-id="${escapeHtml(champion.id)}">
       <img src="${escapeHtml(championImage(champion))}" alt="" loading="lazy" data-image-label="${escapeHtml(champion.name)}">
-      <span>${escapeHtml(champion.name)}</span>
+      <span class="option-name">${escapeHtml(champion.name)}</span>
+      ${renderOptionMeta(matchups[champion.id])}
     </button>
   `).join('')}
   ${genericCategories.map((category) => `
@@ -946,16 +948,53 @@ function renderDetail(champion) {
   `;
 }
 
-function renderMatchupRatings(guide) {
-  if (!guide || typeof guide !== 'object') return '';
-  const ratings = [
+function normalizeProgress(value) {
+  if (value === '' || value === null || value === undefined || typeof value === 'boolean') return null;
+  const number = Number(value);
+  return Number.isInteger(number) && number >= 0 && number <= 100 ? number : null;
+}
+
+// 0% = 赤(色相0)、50% = 黄(60)、100% = 緑(120)。書き出しHTMLでも使うため色はインラインで指定する
+function renderProgressCircle(value, size = 36) {
+  const progress = normalizeProgress(value);
+  if (progress === null) return '';
+  const stroke = Math.max(3, Math.round(size / 9));
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const color = `hsl(${Math.round(progress * 1.2)}, 75%, 50%)`;
+  const center = size / 2;
+  return `<svg class="progress-circle" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" role="img" aria-label="対策進捗 ${progress}%" style="flex:none;color:#e5eee8">
+    <circle cx="${center}" cy="${center}" r="${radius}" fill="none" stroke="#3a3f47" stroke-width="${stroke}" opacity=".6"/>
+    <circle cx="${center}" cy="${center}" r="${radius}" fill="none" stroke="${color}" stroke-width="${stroke}" stroke-linecap="round" stroke-dasharray="${(circumference * progress / 100).toFixed(2)} ${circumference.toFixed(2)}" transform="rotate(-90 ${center} ${center})"/>
+    <text x="${center}" y="${center}" text-anchor="middle" dominant-baseline="central" fill="currentColor" font-size="${Math.round(size * (progress === 100 ? .28 : .32))}" font-weight="700">${progress}</text>
+  </svg>`;
+}
+
+function validRatings(guide) {
+  if (!guide || typeof guide !== 'object') return [];
+  return [
     ['マッチアップ', guide.matchupRating],
     ['レーン', guide.laneRating]
   ].filter(([, value]) => MATCHUP_RATING_OPTIONS.includes(value));
-  if (!ratings.length) return '';
-  return `<div class="matchup-ratings">${ratings.map(([label, value]) => `
-    <span><span class="matchup-rating-label">${label}：</span><strong>${value}</strong></span>
+}
+
+// 進捗 → マッチアップ → レーン の順に並べる
+function renderMatchupRatings(guide) {
+  const ratings = validRatings(guide);
+  const circle = guide && typeof guide === 'object' ? renderProgressCircle(guide.progress, 34) : '';
+  if (!ratings.length && !circle) return '';
+  return `<div class="matchup-ratings">${circle}${ratings.map(([label, value]) => `
+    <span><span class="matchup-rating-label">${label}：</span><strong data-rating="${value}">${value}</strong></span>
   `).join('')}</div>`;
+}
+
+function renderOptionMeta(guide) {
+  const ratings = validRatings(guide);
+  const circle = guide && typeof guide === 'object' ? renderProgressCircle(guide.progress, 26) : '';
+  if (!ratings.length && !circle) return '';
+  const short = { 'マッチアップ': '対面', 'レーン': 'レーン' };
+  return `<span class="option-meta">${circle}<span class="option-ratings">${ratings.map(([label, value]) =>
+    `<span class="option-rating"><i>${short[label]}</i><b data-rating="${value}">${value}</b></span>`).join('')}</span></span>`;
 }
 
 function renderGenericDetail(category) {
@@ -1035,6 +1074,8 @@ function setFormValues(guide, mode, targetId, selectedGenericCategories) {
     guide && MATCHUP_RATING_OPTIONS.includes(guide.matchupRating) ? guide.matchupRating : '';
   form.elements.namedItem('laneRating').value =
     guide && MATCHUP_RATING_OPTIONS.includes(guide.laneRating) ? guide.laneRating : '';
+  const progress = guide ? normalizeProgress(guide.progress) : null;
+  form.elements.namedItem('progress').value = progress === null ? '' : String(progress);
   const genericCategoryIds = selectedMode === 'category'
     ? selectedGenericCategories || genericCategoryIdsFromGuide(guide, targetId)
     : [];
@@ -1074,6 +1115,7 @@ function collectGuide() {
   if (isMatchup) {
     guide.matchupRating = form.elements.namedItem('matchupRating').value;
     guide.laneRating = form.elements.namedItem('laneRating').value;
+    guide.progress = form.elements.namedItem('progress').value.trim();
   } else {
     guide.categories = assignedCategories;
   }
@@ -1092,7 +1134,7 @@ function validateGuide(guide) {
   const buildItems = buildItemIds(guide.build);
   if (!FIELDS.some(([key]) => guide[key]) && !hasAnyRuneSelection(guide.runes) && !guide.skillOrder && !buildItems.length
       && !hasAnySummonerSpellSelection(guide.summonerSpells)
-      && !(guide.mode === 'matchup' && (guide.matchupRating || guide.laneRating))
+      && !(guide.mode === 'matchup' && (guide.matchupRating || guide.laneRating || guide.progress !== ''))
       ) {
     errors.push('対策情報を1つ以上入力してください。');
   }
@@ -1101,6 +1143,9 @@ function validateGuide(guide) {
     ['レーン', guide.laneRating]
   ]) {
     if (value && !MATCHUP_RATING_OPTIONS.includes(value)) errors.push(`${label}評価が正しくありません。`);
+  }
+  if (guide.progress && (!/^\d{1,3}$/.test(guide.progress) || Number(guide.progress) > 100)) {
+    errors.push('対策進捗は0〜100の整数で入力してください。');
   }
   const spellSets = normalizeSummonerSpellSets(guide.summonerSpells).filter((spellSet) => spellSet.some(Boolean));
   if (spellSets.some((spellSet) => spellSet.length !== 2
@@ -1169,6 +1214,7 @@ function guideExport(guide) {
   if (guide.skillOrder) content.skillOrder = guide.skillOrder;
   if (MATCHUP_RATING_OPTIONS.includes(guide.matchupRating)) content.matchupRating = guide.matchupRating;
   if (MATCHUP_RATING_OPTIONS.includes(guide.laneRating)) content.laneRating = guide.laneRating;
+  if (guide.mode === 'matchup' && normalizeProgress(guide.progress) !== null) content.progress = normalizeProgress(guide.progress);
   if (guide.mode === 'category' && guide.categories.length) content.categories = guide.categories;
   if (hasBuildItems(guide.build)) content.build = normalizeBuildSelection(guide.build);
   return {
@@ -1649,7 +1695,9 @@ championList.addEventListener('keydown', (event) => {
   }
 });
 
-const HELPER_URL = 'http://127.0.0.1:8001/state';
+// 統合サーバーは同一オリジンの /state、従来の個別ヘルパーは :8001 で公開する
+const HELPER_URLS = ['./state', 'http://127.0.0.1:8001/state'];
+let helperUrlIndex = 0;
 const followBar = document.querySelector('#follow-bar');
 let followPaused = false;
 let followKey = '';
@@ -1720,8 +1768,21 @@ function applyFollowState() {
 async function pollHelper() {
   let delay = 1000;
   try {
-    const response = await fetch(HELPER_URL, { cache: 'no-store' });
-    if (!response.ok) throw new Error(String(response.status));
+    let response = null;
+    for (let i = 0; i < HELPER_URLS.length; i += 1) {
+      const url = HELPER_URLS[(helperUrlIndex + i) % HELPER_URLS.length];
+      try {
+        const candidate = await fetch(url, { cache: 'no-store' });
+        if (candidate.ok) {
+          helperUrlIndex = (helperUrlIndex + i) % HELPER_URLS.length;
+          response = candidate;
+          break;
+        }
+      } catch (error) {
+        // 次の候補を試す
+      }
+    }
+    if (!response) throw new Error('helper unavailable');
     followState = await response.json();
   } catch (error) {
     followState = null;
