@@ -6,7 +6,10 @@ LCU への書き込みは行わない。標準ライブラリのみ使用する�
 import base64
 import json
 import os
+import re
 import ssl
+import string
+import subprocess
 import threading
 import time
 import urllib.error
@@ -19,10 +22,66 @@ PORT = int(os.environ.get('HELPER_PORT', '8001'))
 POLL_SECONDS = 1.0
 DEFAULT_INSTALL_DIR = r'C:\Riot Games\League of Legends'
 DATA_DRAGON_ROOT = 'https://ddragon.leagueoflegends.com'
-HINTS_PATH = Path(__file__).resolve().parent.parent / 'data' / 'top-hints.json'
+DEFAULT_HINTS_PATH = Path(__file__).resolve().parent.parent / 'data' / 'top-hints.json'
+PROCESS_CHECK_SECONDS = 15
 TOP_HINT_SCORE = 2
 TOP_TAG_SCORE = 1
 TOP_TAGS = {'Fighter', 'Tank'}
+
+
+def install_dir_from_product_settings():
+    """Riot のメタデータからインストール先を読む。"""
+    root = Path(os.environ.get('PROGRAMDATA', r'C:\ProgramData')) / 'Riot Games' / 'Metadata'
+    for settings in root.glob('league_of_legends.*/*.product_settings.yaml'):
+        try:
+            text = settings.read_text(encoding='utf-8')
+        except OSError:
+            continue
+        match = re.search(r'product_install_full_path:\s*["\']?([^"\'\r\n]+)', text)
+        if match:
+            return match.group(1).strip()
+    return None
+
+
+def install_dir_from_process():
+    """起動中の LeagueClientUx の --install-directory 引数からインストール先を読む。"""
+    if os.name != 'nt':
+        return None
+    command = ("(Get-CimInstance Win32_Process -Filter \"Name='LeagueClientUx.exe'\").CommandLine")
+    try:
+        output = subprocess.run(
+            ['powershell', '-NoProfile', '-Command', command],
+            capture_output=True, text=True, timeout=10, creationflags=0x08000000,
+        ).stdout
+    except (OSError, subprocess.SubprocessError):
+        return None
+    match = re.search(r'--install-directory=(?:"([^"]+)"|(\S+))', output)
+    return (match.group(1) or match.group(2)) if match else None
+
+
+def candidate_install_dirs(explicit=None):
+    """lockfile を探すインストール先の候補。明示指定があればそれだけを使う。"""
+    if explicit:
+        return [explicit]
+    candidates = [install_dir_from_product_settings(), DEFAULT_INSTALL_DIR]
+    candidates += [rf'{letter}:\Riot Games\League of Legends' for letter in string.ascii_uppercase[2:]]
+    seen = []
+    for candidate in candidates:
+        if candidate and candidate not in seen:
+            seen.append(candidate)
+    return seen
+
+
+def find_lockfile(candidates, use_process=True):
+    for candidate in candidates:
+        lockfile = read_lockfile(candidate)
+        if lockfile:
+            return lockfile
+    if use_process:
+        from_process = install_dir_from_process()
+        if from_process:
+            return read_lockfile(from_process)
+    return None
 
 
 def read_lockfile(install_dir):
@@ -88,9 +147,9 @@ def idle_state(connected):
     return {'connected': connected, 'phase': 'idle', 'enemies': [], 'suggested': None}
 
 
-def load_top_hints():
+def load_top_hints(hints_path=DEFAULT_HINTS_PATH):
     try:
-        return json.loads(HINTS_PATH.read_text(encoding='utf-8')).get('top', [])
+        return json.loads(Path(hints_path).read_text(encoding='utf-8')).get('top', [])
     except (OSError, ValueError):
         return []
 
@@ -136,12 +195,18 @@ def fetch_session(lockfile):
         raise
 
 
-def poll_loop(store, install_dir):
-    top_hints = load_top_hints()
+def poll_loop(store, install_dir, hints_path=DEFAULT_HINTS_PATH):
+    """install_dir が None のときは候補とクライアントのプロセスから自動検出する。"""
+    top_hints = load_top_hints(hints_path)
+    candidates = candidate_install_dirs(install_dir)
+    last_process_check = 0.0
     champions = None
     while True:
         try:
-            lockfile = read_lockfile(install_dir)
+            use_process = not install_dir and time.monotonic() - last_process_check >= PROCESS_CHECK_SECONDS
+            if use_process:
+                last_process_check = time.monotonic()
+            lockfile = find_lockfile(candidates, use_process)
             if not lockfile:
                 store.set(idle_state(False))
             else:
@@ -159,23 +224,27 @@ def origin_allowed(origin):
     return origin.startswith(('http://localhost:', 'http://127.0.0.1:')) or origin in ('http://localhost', 'http://127.0.0.1')
 
 
+def send_state(handler, store):
+    body = json.dumps(store.get()).encode()
+    handler.send_response(200)
+    handler.send_header('Content-Type', 'application/json')
+    handler.send_header('Cache-Control', 'no-store')
+    origin = handler.headers.get('Origin', '')
+    if origin_allowed(origin):
+        handler.send_header('Access-Control-Allow-Origin', origin)
+        handler.send_header('Vary', 'Origin')
+    handler.send_header('Content-Length', str(len(body)))
+    handler.end_headers()
+    handler.wfile.write(body)
+
+
 def make_handler(store):
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):
             if self.path != '/state':
                 self.send_error(404)
                 return
-            body = json.dumps(store.get()).encode()
-            self.send_response(200)
-            self.send_header('Content-Type', 'application/json')
-            self.send_header('Cache-Control', 'no-store')
-            origin = self.headers.get('Origin', '')
-            if origin_allowed(origin):
-                self.send_header('Access-Control-Allow-Origin', origin)
-                self.send_header('Vary', 'Origin')
-            self.send_header('Content-Length', str(len(body)))
-            self.end_headers()
-            self.wfile.write(body)
+            send_state(self, store)
 
         def log_message(self, *args):
             pass
@@ -184,10 +253,10 @@ def make_handler(store):
 
 
 def main():
-    install_dir = os.environ.get('LOL_INSTALL_DIR', DEFAULT_INSTALL_DIR)
+    install_dir = os.environ.get('LOL_INSTALL_DIR')
     store = StateStore()
     threading.Thread(target=poll_loop, args=(store, install_dir), daemon=True).start()
-    print(f'http://{HOST}:{PORT}/state (LOL_INSTALL_DIR={install_dir})', flush=True)
+    print(f'http://{HOST}:{PORT}/state (LOL_INSTALL_DIR={install_dir or '自動検出'})', flush=True)
     ThreadingHTTPServer((HOST, PORT), make_handler(store)).serve_forever()
 
 

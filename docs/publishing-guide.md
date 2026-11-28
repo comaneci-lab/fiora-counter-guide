@@ -28,7 +28,7 @@
 2. 次のコマンドで結合します。
 
    ```powershell
-   node scripts/build-local-data.js
+   python helper/fiora_guide.py build-data
    ```
 
    次のファイルが再生成されます。
@@ -67,7 +67,7 @@
 
 ```text
 editor.html で作成 → JSONを書き出し → data/matchups/ に配置
-  → node scripts/build-local-data.js → ローカルで確認
+  → python helper/fiora_guide.py build-data → ローカルで確認
   → コミット → Pull Request → main にマージ → 自動デプロイ
 ```
 
